@@ -1,1 +1,556 @@
-# dance
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>リズムダンスミラー</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0; width: 100%; height: 100%;
+    overflow: hidden; overscroll-behavior: none;
+    touch-action: manipulation;
+    background: radial-gradient(ellipse at center, #fff2cf 0%, #ffd9ec 45%, #cdeeff 100%);
+    font-family: 'BIZ UDPGothic', sans-serif;
+  }
+  #canvas-container { position: fixed; inset: 0; }
+  canvas { display: block; touch-action: manipulation; }
+
+  .ui-layer {
+    position: fixed; inset: 0; pointer-events: none;
+    display: flex; flex-direction: column; justify-content: space-between;
+    padding: env(safe-area-inset-top, 16px) 16px calc(env(safe-area-inset-bottom, 16px) + 16px);
+  }
+  .top-row {
+    display: flex; justify-content: space-between; align-items: flex-start;
+  }
+  .badge {
+    background: rgba(255,255,255,0.75); border: 1px solid rgba(255,150,90,0.35);
+    color: #b3436b; padding: 8px 14px; border-radius: 10px; font-weight: 700;
+    font-size: 16px; backdrop-filter: blur(4px); box-shadow: 0 3px 10px rgba(180,120,60,0.15);
+  }
+  #cueWrap {
+    position: absolute; top: 14%; left: 50%; transform: translateX(-50%);
+    text-align: center; pointer-events: none; width: 90%;
+  }
+  #cueText {
+    display: inline-block; color: #ff6f91; font-size: 30px; font-weight: 700;
+    text-shadow: 0 0 12px rgba(255,255,255,0.9), 0 2px 4px rgba(180,80,60,0.25);
+    opacity: 0; transform: translateY(-6px) scale(0.96);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+  }
+  #cueText.show { opacity: 1; transform: translateY(0) scale(1); }
+
+  #feedback {
+    position: absolute; top: 30%; left: 50%; transform: translate(-50%,-50%) scale(0.8);
+    font-size: 34px; font-weight: 700; opacity: 0; pointer-events: none;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+  }
+  #feedback.show { opacity: 1; transform: translate(-50%,-50%) scale(1.05); }
+
+  #gaugeOuter {
+    position: absolute; top: 22%; left: 50%; transform: translateX(-50%);
+    width: 60%; max-width: 420px; height: 8px; border-radius: 5px;
+    background: rgba(255,255,255,0.15); overflow: hidden; pointer-events: none;
+  }
+  #gaugeInner {
+    height: 100%; width: 0%; border-radius: 5px;
+    background: linear-gradient(90deg, #ffe98a, #ff8a5c);
+  }
+
+  .center-overlay {
+    position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 18px; pointer-events: auto;
+    background: rgba(255,245,225,0.65); backdrop-filter: blur(3px);
+  }
+  .center-overlay h1 { color: #ff6f91; font-size: 26px; margin: 0; text-align: center; }
+  .center-overlay p { color: #6b5a7a; font-size: 15px; margin: 0; text-align: center; line-height: 1.7; max-width: 320px; }
+  .ui-button {
+    pointer-events: auto; cursor: pointer; user-select: none;
+    min-height: 52px; min-width: 160px; padding: 12px 28px;
+    border-radius: 999px; border: none; font-family: inherit;
+    font-size: 18px; font-weight: 700; color: #241238;
+    background: linear-gradient(135deg, #ffe98a, #ff8a5c);
+    box-shadow: 0 6px 18px rgba(255,150,90,0.35);
+  }
+  .ui-button:active { transform: scale(0.96); }
+
+  #resultScore { color: #3ec6c6; font-size: 44px; font-weight: 700; }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div id="canvas-container"></div>
+
+<div class="ui-layer">
+  <div class="top-row">
+    <div class="badge" id="badgeLabel">おてほん / きみ</div>
+    <div class="badge" id="scoreBadge">スコア 0 / 0</div>
+  </div>
+</div>
+
+<div id="cueWrap">
+  <div id="gaugeOuter"><div id="gaugeInner"></div></div>
+  <div id="cueText"></div>
+</div>
+<div id="feedback"></div>
+
+<div class="center-overlay" id="startOverlay">
+  <h1>リズムダンスミラー</h1>
+  <p>おてほんキャラのポーズと文字の指示をよく見て、ビートに合わせて<br>
+  ← → スワイプ / ↓ スワイプ / タップ　のいずれかで真似しよう！</p>
+  <button class="ui-button" id="startBtn">タップしてスタート</button>
+</div>
+
+<div class="center-overlay hidden" id="resultOverlay">
+  <h1>けっか</h1>
+  <div id="resultScore">0 / 0</div>
+  <button class="ui-button" id="retryBtn">もういちど</button>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+/* =========================================================
+   リズムダンスミラー（簡略版 / Sonnet実装）
+   - 肩・股関節のみ（肘・膝なし）
+   - お手本・プレイヤーは同一骨格関数を使い回し
+   - BPM固定・拍子固定
+   - 判定は hit / miss の2択のみ
+   ========================================================= */
+
+/* ---------- iPad対策 ---------- */
+document.addEventListener('gesturestart', e => e.preventDefault());
+let lastTapAt = 0;
+function isUIElement(target) {
+  return target && target.closest && target.closest('.ui-button');
+}
+
+/* ---------- 基本パラメータ ---------- */
+const BPM = 78;
+const BEAT_MS = 60000 / BPM;
+const CUE_SPACING_BEATS = 2;      // 2拍に1アクション
+const LEAD_IN_BEATS = 4;          // 開始前の準備拍数
+const SEQUENCE_LENGTH = 12;
+const HIT_WINDOW = 380;           // 判定窓 ±380ms（ゆったり目）
+const CUE_TYPES = ['left', 'right', 'down', 'tap'];
+const CUE_LABELS = {
+  left:  '← 左スワイプ！',
+  right: '→ 右スワイプ！',
+  down:  '↓ しゃがむ！',
+  tap:   '● タップ！'
+};
+
+/* ---------- シーン ---------- */
+const container = document.getElementById('canvas-container');
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0xffe6d9, 6, 15);
+
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 50);
+camera.position.set(0, 1.7, 4.2);
+camera.lookAt(0, 0.7, 0);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+container.appendChild(renderer.domElement);
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+/* ---------- ライト（明るいステージ演出） ---------- */
+scene.add(new THREE.AmbientLight(0xfff2e0, 0.9));
+const dLight = new THREE.DirectionalLight(0xffffff, 1.0);
+dLight.position.set(2, 4, 3);
+scene.add(dLight);
+const spotCyan = new THREE.PointLight(0x8ce8ff, 2.6, 9);
+spotCyan.position.set(-2.2, 2.5, 1.5);
+scene.add(spotCyan);
+const spotMagenta = new THREE.PointLight(0xffb3e6, 2.6, 9);
+spotMagenta.position.set(2.2, 2.5, 1.5);
+scene.add(spotMagenta);
+
+/* ---------- 床 ---------- */
+const floor = new THREE.Mesh(
+  new THREE.CircleGeometry(6, 32),
+  new THREE.MeshStandardMaterial({ color: 0xffe9d6, roughness: 0.8 })
+);
+floor.rotation.x = -Math.PI / 2;
+scene.add(floor);
+const grid = new THREE.GridHelper(12, 24, 0xffb8d9, 0xffd9a8);
+grid.position.y = 0.001;
+scene.add(grid);
+
+/* ---------- 棒人間キャラ生成（お手本・プレイヤー共通関数） ---------- */
+function createCharacter(color, opacity) {
+  const root = new THREE.Group();
+  const torso = new THREE.Group();
+  root.add(torso);
+
+  const mat = new THREE.MeshStandardMaterial({
+    color, roughness: 0.5, metalness: 0.1,
+    transparent: opacity < 1, opacity
+  });
+
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.42, 4, 8), mat);
+  body.position.y = 0.35;
+  torso.add(body);
+
+  const headGroup = new THREE.Group();
+  headGroup.position.y = 0.78;
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 14, 14), mat);
+  headGroup.add(head);
+  torso.add(headGroup);
+
+  function makeLimb(length, radius, pivot) {
+    const group = new THREE.Group();
+    group.position.copy(pivot);
+    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius * 0.75, length, 8), mat);
+    mesh.position.y = -length / 2;
+    group.add(mesh);
+    return group;
+  }
+
+  const shoulderL = makeLimb(0.38, 0.055, new THREE.Vector3(-0.2, 0.58, 0));
+  const shoulderR = makeLimb(0.38, 0.055, new THREE.Vector3(0.2, 0.58, 0));
+  const hipL = makeLimb(0.48, 0.07, new THREE.Vector3(-0.11, 0.02, 0));
+  const hipR = makeLimb(0.48, 0.07, new THREE.Vector3(0.11, 0.02, 0));
+  torso.add(shoulderL, shoulderR, hipL, hipR);
+
+  return { root, torso, shoulderL, shoulderR, hipL, hipR, current: { ...BASE_POSE }, targetPoseName: 'idle' };
+}
+
+/* ---------- ポーズ定義 ---------- */
+const BASE_POSE = {
+  rootX: 0, rootY: 0.5, torsoRotZ: 0,
+  shL_z: 0.3, shL_x: 0, shR_z: -0.3, shR_x: 0,
+  hL_z: 0.1, hL_x: 0, hR_z: -0.1, hR_x: 0
+};
+const POSES = {
+  idle:  { ...BASE_POSE },
+  left:  { ...BASE_POSE, rootX: -0.3, torsoRotZ: 0.35, shL_z: 1.5, shR_z: -0.9, hL_z: 0.6, hR_z: -0.2 },
+  right: { ...BASE_POSE, rootX: 0.3,  torsoRotZ: -0.35, shL_z: 0.9, shR_z: -1.5, hL_z: 0.2, hR_z: -0.6 },
+  down:  { ...BASE_POSE, rootY: 0.28, shL_z: 0.25, shL_x: -0.35, shR_z: -0.25, shR_x: -0.35, hL_z: 0.85, hL_x: 0.45, hR_z: -0.85, hR_x: 0.45 },
+  tap:   { ...BASE_POSE, rootY: 0.72, shL_z: 2.5, shR_z: -2.5 }
+};
+
+function applyPose(char) {
+  const v = char.current;
+  char.root.position.x = v.rootX;
+  char.root.position.y = v.rootY;
+  char.torso.rotation.z = v.torsoRotZ;
+  char.shoulderL.rotation.set(v.shL_x, 0, v.shL_z);
+  char.shoulderR.rotation.set(v.shR_x, 0, v.shR_z);
+  char.hipL.rotation.set(v.hL_x, 0, v.hL_z);
+  char.hipR.rotation.set(v.hR_x, 0, v.hR_z);
+}
+
+function updatePose(char, dt) {
+  const target = POSES[char.targetPoseName];
+  const alpha = 1 - Math.exp(-dt * 9);
+  for (const k in BASE_POSE) {
+    char.current[k] += (target[k] - char.current[k]) * alpha;
+  }
+  applyPose(char);
+}
+
+/* ---------- キャラ配置 ---------- */
+const hero = createCharacter(0x6fd3ff, 0.55);
+const heroWrap = new THREE.Group();
+heroWrap.position.set(-0.85, 0, -0.55);
+heroWrap.add(hero.root);
+scene.add(heroWrap);
+
+const player = createCharacter(0xff5da2, 1);
+const playerWrap = new THREE.Group();
+playerWrap.position.set(0.85, 0, 0.35);
+playerWrap.add(player.root);
+scene.add(playerWrap);
+
+/* ---------- 音声（Web Audio API） ---------- */
+let audioCtx = null;
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+function beep(freq, duration, type, gainVal) {
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.value = freq;
+  const t = audioCtx.currentTime;
+  gain.gain.setValueAtTime(gainVal, t);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + duration);
+  osc.connect(gain).connect(audioCtx.destination);
+  osc.start(t);
+  osc.stop(t + duration);
+}
+const sndBeat = () => beep(760, 0.05, 'sine', 0.06);
+const sndHit  = () => beep(1400, 0.12, 'triangle', 0.2);
+const sndMiss = () => beep(150, 0.18, 'sawtooth', 0.15);
+
+/* ---------- ゲーム状態 ---------- */
+let gameState = 'ready'; // ready | playing | result
+let startTime = 0;
+let sequence = [];
+let score = 0;
+let lastBeatTick = -1;
+let cueTextTimeoutId = null;
+
+function generateSequence() {
+  const seq = [];
+  let prev = null;
+  for (let i = 0; i < SEQUENCE_LENGTH; i++) {
+    let type;
+    do { type = CUE_TYPES[Math.floor(Math.random() * CUE_TYPES.length)]; } while (type === prev);
+    prev = type;
+    seq.push({
+      beatIndex: LEAD_IN_BEATS + i * CUE_SPACING_BEATS,
+      type,
+      preCueShown: false,
+      judged: false,
+      result: null
+    });
+  }
+  return seq;
+}
+
+const scoreBadge = document.getElementById('scoreBadge');
+const cueText = document.getElementById('cueText');
+const gaugeInner = document.getElementById('gaugeInner');
+const feedback = document.getElementById('feedback');
+const startOverlay = document.getElementById('startOverlay');
+const resultOverlay = document.getElementById('resultOverlay');
+const resultScore = document.getElementById('resultScore');
+
+function updateScoreUI() {
+  scoreBadge.textContent = `スコア ${score} / ${SEQUENCE_LENGTH}`;
+}
+
+function showFeedback(text, color) {
+  feedback.textContent = text;
+  feedback.style.color = color;
+  feedback.classList.add('show');
+  clearTimeout(feedback._t);
+  feedback._t = setTimeout(() => feedback.classList.remove('show'), 420);
+}
+
+function showCue(type) {
+  cueText.textContent = CUE_LABELS[type];
+  cueText.classList.add('show');
+  clearTimeout(cueTextTimeoutId);
+  cueTextTimeoutId = setTimeout(() => cueText.classList.remove('show'), CUE_SPACING_BEATS * BEAT_MS - 80);
+}
+
+function startGame() {
+  ensureAudio();
+  score = 0;
+  sequence = generateSequence();
+  gameState = 'playing';
+  startTime = performance.now();
+  lastBeatTick = -1;
+  updateScoreUI();
+  startOverlay.classList.add('hidden');
+  resultOverlay.classList.add('hidden');
+  hero.targetPoseName = 'idle';
+  player.targetPoseName = 'idle';
+}
+
+function endGame() {
+  gameState = 'result';
+  resultScore.textContent = `${score} / ${SEQUENCE_LENGTH}`;
+  resultOverlay.classList.remove('hidden');
+  cueText.classList.remove('show');
+  gaugeInner.style.width = '0%';
+}
+
+document.getElementById('startBtn').addEventListener('click', startGame);
+document.getElementById('retryBtn').addEventListener('click', startGame);
+
+/* ---------- 判定処理 ---------- */
+function handleGestureType(type, timestamp) {
+  if (gameState !== 'playing') return;
+  let best = null, bestDiff = Infinity;
+  for (const cue of sequence) {
+    if (cue.judged) continue;
+    const beatTime = startTime + cue.beatIndex * BEAT_MS;
+    const diff = Math.abs(timestamp - beatTime);
+    if (diff < bestDiff) { bestDiff = diff; best = cue; }
+  }
+  if (!best || bestDiff > HIT_WINDOW) return;
+
+  best.judged = true;
+  if (type === best.type) {
+    best.result = 'hit';
+    score++;
+    player.targetPoseName = best.type;
+    sndHit();
+    showFeedback('Hit!', '#12b8a3');
+  } else {
+    best.result = 'miss';
+    sndMiss();
+    showFeedback('Miss', '#e63950');
+  }
+  updateScoreUI();
+}
+
+function processGesture(dx, dy, dt) {
+  let type = null;
+  if (Math.abs(dx) < 15 && Math.abs(dy) < 15 && dt < 250) {
+    type = 'tap';
+  } else if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+    type = dx > 0 ? 'right' : 'left';
+  } else if (Math.abs(dy) > 40 && Math.abs(dy) > Math.abs(dx) * 1.5 && dy > 0) {
+    type = 'down';
+  }
+  if (type) handleGestureType(type, performance.now());
+}
+
+/* ---------- 入力（タッチ） ---------- */
+const gesture = { active: false, startX: 0, startY: 0, startTime: 0 };
+
+document.addEventListener('touchstart', e => {
+  if (isUIElement(e.target)) return;
+  e.preventDefault();
+  const t = e.touches[0];
+  gesture.active = true;
+  gesture.startX = t.clientX;
+  gesture.startY = t.clientY;
+  gesture.startTime = performance.now();
+}, { passive: false });
+
+document.addEventListener('touchmove', e => {
+  if (isUIElement(e.target)) return;
+  e.preventDefault();
+}, { passive: false });
+
+document.addEventListener('touchend', e => {
+  if (isUIElement(e.target)) return;
+  const now = performance.now();
+  if (now - lastTapAt < 300) e.preventDefault(); // ダブルタップズーム防止
+  lastTapAt = now;
+  if (!gesture.active) return;
+  gesture.active = false;
+  const t = e.changedTouches[0];
+  const dx = t.clientX - gesture.startX;
+  const dy = t.clientY - gesture.startY;
+  const dt = now - gesture.startTime;
+  processGesture(dx, dy, dt);
+}, { passive: false });
+
+/* ---------- 入力（デスクトップ確認用・マウス） ---------- */
+let mouseDown = false, mStartX = 0, mStartY = 0, mStartTime = 0;
+document.addEventListener('mousedown', e => {
+  if (isUIElement(e.target)) return;
+  mouseDown = true; mStartX = e.clientX; mStartY = e.clientY; mStartTime = performance.now();
+});
+document.addEventListener('mouseup', e => {
+  if (isUIElement(e.target)) return;
+  if (!mouseDown) return;
+  mouseDown = false;
+  processGesture(e.clientX - mStartX, e.clientY - mStartY, performance.now() - mStartTime);
+});
+
+/* ---------- ゲームループ ---------- */
+let lastFrameTime = performance.now();
+let frameCount = 0;
+
+function animate(now) {
+  requestAnimationFrame(animate);
+  const dt = Math.min((now - lastFrameTime) / 1000, 1 / 30); // dtScale方式（120Hz対応クランプ）
+  lastFrameTime = now;
+  frameCount++;
+
+  if (gameState === 'playing') {
+    const elapsed = now - startTime;
+
+    // ビート音
+    const beatIndexNow = Math.floor(elapsed / BEAT_MS);
+    if (beatIndexNow > lastBeatTick) {
+      lastBeatTick = beatIndexNow;
+      if (beatIndexNow >= 0) sndBeat();
+    }
+
+    let activeCue = null;
+    for (const cue of sequence) {
+      const preCueTime = (cue.beatIndex - CUE_SPACING_BEATS) * BEAT_MS;
+      const beatTime = cue.beatIndex * BEAT_MS;
+
+      if (!cue.preCueShown && elapsed >= preCueTime) {
+        cue.preCueShown = true;
+        hero.targetPoseName = cue.type;
+        showCue(cue.type);
+      }
+      if (cue.preCueShown && !cue.judged) {
+        activeCue = cue;
+      }
+      if (!cue.judged && elapsed > beatTime + HIT_WINDOW) {
+        cue.judged = true;
+        cue.result = 'miss';
+        sndMiss();
+        showFeedback('Miss', '#e63950');
+        updateScoreUI();
+      }
+    }
+
+    if (activeCue) {
+      const preCueTime = (activeCue.beatIndex - CUE_SPACING_BEATS) * BEAT_MS;
+      const progress = Math.min(1, Math.max(0, (elapsed - preCueTime) / (CUE_SPACING_BEATS * BEAT_MS)));
+      gaugeInner.style.width = `${progress * 100}%`;
+    }
+
+    const lastCue = sequence[sequence.length - 1];
+    if (lastCue && lastCue.judged && elapsed > lastCue.beatIndex * BEAT_MS + HIT_WINDOW + 400) {
+      endGame();
+    }
+  }
+
+  updatePose(hero, dt);
+  updatePose(player, dt);
+
+  spotCyan.intensity = 3 + Math.sin(now * 0.002) * 0.6;
+  spotMagenta.intensity = 3 + Math.cos(now * 0.002) * 0.6;
+
+  renderer.render(scene, camera);
+}
+requestAnimationFrame(animate);
+
+/* ---------- テスト用フック ---------- */
+window.__game = {
+  state: () => gameState,
+  frames: () => frameCount,
+  elapsed: () => (gameState === 'playing' ? performance.now() - startTime : 0),
+  score: () => score,
+  sequence: () => sequence,
+  entities: { hero, player },
+  camera,
+  // 注：hero/playerの位置は内部ポーズテーブル(current/targetPoseName)で駆動しており、
+  // .position を外部から直接書き換えても次フレームでポーズ補間により上書きされる。
+  api: {
+    start: startGame,
+    triggerGesture: (type) => handleGestureType(type, performance.now())
+  }
+};
+</script>
+</body>
+</html>
