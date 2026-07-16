@@ -18,6 +18,7 @@
     touch-action: manipulation;
     background: radial-gradient(ellipse at center, #fff2cf 0%, #ffd9ec 45%, #cdeeff 100%);
     font-family: 'BIZ UDPGothic', sans-serif;
+    user-select: none; -webkit-user-select: none;
   }
   #canvas-container { position: fixed; inset: 0; }
   canvas { display: block; touch-action: manipulation; }
@@ -25,94 +26,146 @@
   .ui-layer {
     position: fixed; inset: 0; pointer-events: none;
     display: flex; flex-direction: column; justify-content: space-between;
-    padding: env(safe-area-inset-top, 16px) 16px calc(env(safe-area-inset-bottom, 16px) + 16px);
+    padding: calc(env(safe-area-inset-top, 0px) + 14px) 16px calc(env(safe-area-inset-bottom, 0px) + 16px);
   }
-  .top-row {
-    display: flex; justify-content: space-between; align-items: flex-start;
-  }
+  .top-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .bottom-row { display: flex; justify-content: center; }
+
   .badge {
-    background: rgba(255,255,255,0.75); border: 1px solid rgba(255,150,90,0.35);
-    color: #b3436b; padding: 8px 14px; border-radius: 10px; font-weight: 700;
-    font-size: 16px; backdrop-filter: blur(4px); box-shadow: 0 3px 10px rgba(180,120,60,0.15);
+    background: rgba(255,255,255,0.78); border: 1px solid rgba(255,150,90,0.35);
+    color: #b3436b; padding: 8px 14px; border-radius: 12px; font-weight: 700;
+    font-size: 15px; backdrop-filter: blur(4px); box-shadow: 0 3px 10px rgba(180,120,60,0.15);
+    line-height: 1.4;
   }
+  .badge .sub { display: block; font-size: 11px; color: #8a7a92; font-weight: 400; }
+  #legendBadge { color: #4a7fa5; }
+  #legendBadge b.hero { color: #3aa3d6; }
+  #legendBadge b.you { color: #ff5da2; }
+
+  #comboWrap {
+    position: absolute; top: 34%; left: 50%; transform: translateX(-50%);
+    text-align: center; pointer-events: none;
+    opacity: 0; transition: opacity 0.2s ease;
+  }
+  #comboWrap.show { opacity: 1; }
+  #comboNum {
+    font-size: 46px; font-weight: 700; color: #ff8f4c; line-height: 1;
+    text-shadow: 0 0 14px rgba(255,255,255,0.95), 0 3px 6px rgba(180,80,60,0.2);
+  }
+  #comboLabel { font-size: 13px; font-weight: 700; color: #b3436b; letter-spacing: 0.12em; }
+
   #cueWrap {
-    position: absolute; top: 14%; left: 50%; transform: translateX(-50%);
-    text-align: center; pointer-events: none; width: 90%;
+    position: absolute; top: 13%; left: 50%; transform: translateX(-50%);
+    text-align: center; pointer-events: none; width: 92%;
   }
   #cueText {
     display: inline-block; color: #ff6f91; font-size: 30px; font-weight: 700;
-    text-shadow: 0 0 12px rgba(255,255,255,0.9), 0 2px 4px rgba(180,80,60,0.25);
+    text-shadow: 0 0 12px rgba(255,255,255,0.95), 0 2px 4px rgba(180,80,60,0.25);
     opacity: 0; transform: translateY(-6px) scale(0.96);
     transition: opacity 0.18s ease, transform 0.18s ease;
   }
   #cueText.show { opacity: 1; transform: translateY(0) scale(1); }
 
-  #feedback {
-    position: absolute; top: 30%; left: 50%; transform: translate(-50%,-50%) scale(0.8);
-    font-size: 34px; font-weight: 700; opacity: 0; pointer-events: none;
-    transition: opacity 0.15s ease, transform 0.15s ease;
-  }
-  #feedback.show { opacity: 1; transform: translate(-50%,-50%) scale(1.05); }
-
   #gaugeOuter {
-    position: absolute; top: 22%; left: 50%; transform: translateX(-50%);
-    width: 60%; max-width: 420px; height: 8px; border-radius: 5px;
-    background: rgba(255,255,255,0.15); overflow: hidden; pointer-events: none;
+    position: relative;
+    margin: 0 auto 6px; width: 62%; max-width: 420px; height: 14px; border-radius: 8px;
+    background: rgba(255,255,255,0.45); overflow: visible; pointer-events: none;
+    border: 1px solid rgba(255,180,140,0.4);
   }
   #gaugeInner {
-    height: 100%; width: 0%; border-radius: 5px;
-    background: linear-gradient(90deg, #ffe98a, #ff8a5c);
+    height: 100%; width: 0%; border-radius: 8px 0 0 8px;
+    background: linear-gradient(90deg, #ff8a5c, #ffe98a);
+    overflow: hidden;
   }
+  #gaugeOuter.armed #gaugeInner { background: linear-gradient(90deg, #2ec4b6, #9ff2d0); }
+  /* ジャストタイミングの位置を示す固定マーカー（ゲージの右端＝判定拍） */
+  #gaugeMark {
+    position: absolute; right: -3px; top: -5px; width: 6px; height: 24px;
+    background: #fff; border-radius: 3px; box-shadow: 0 0 0 2px rgba(255,111,145,0.55), 0 0 8px rgba(255,255,255,0.9);
+  }
+  #countNum {
+    font-size: 54px; font-weight: 700; color: #ff6f91; line-height: 1; margin-top: 2px;
+    text-shadow: 0 0 14px rgba(255,255,255,0.95), 0 2px 5px rgba(180,80,60,0.25);
+    opacity: 0; transform: scale(0.8); transition: opacity 0.1s ease, transform 0.1s ease;
+  }
+  #countNum.show { opacity: 1; transform: scale(1); }
+
+  #feedback {
+    position: absolute; top: 25%; left: 50%; transform: translate(-50%,-50%) scale(0.8);
+    font-size: 36px; font-weight: 700; opacity: 0; pointer-events: none; text-align: center;
+    text-shadow: 0 0 12px rgba(255,255,255,0.9);
+    transition: opacity 0.14s ease, transform 0.14s ease;
+  }
+  #feedback.show { opacity: 1; transform: translate(-50%,-50%) scale(1.06); }
+  #feedback .timing { display: block; font-size: 15px; font-weight: 700; color: #8a7a92; margin-top: 4px; }
 
   .center-overlay {
     position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
-    flex-direction: column; gap: 18px; pointer-events: auto;
-    background: rgba(255,245,225,0.65); backdrop-filter: blur(3px);
+    flex-direction: column; gap: 16px; pointer-events: auto; padding: 20px;
+    background: rgba(255,245,225,0.7); backdrop-filter: blur(3px);
   }
   .center-overlay h1 { color: #ff6f91; font-size: 26px; margin: 0; text-align: center; }
-  .center-overlay p { color: #6b5a7a; font-size: 15px; margin: 0; text-align: center; line-height: 1.7; max-width: 320px; }
+  .center-overlay p { color: #6b5a7a; font-size: 15px; margin: 0; text-align: center; line-height: 1.8; max-width: 340px; }
   .ui-button {
     pointer-events: auto; cursor: pointer; user-select: none;
-    min-height: 52px; min-width: 160px; padding: 12px 28px;
+    min-height: 56px; min-width: 180px; padding: 12px 28px;
     border-radius: 999px; border: none; font-family: inherit;
-    font-size: 18px; font-weight: 700; color: #241238;
+    font-size: 18px; font-weight: 700; color: #4a2438;
     background: linear-gradient(135deg, #ffe98a, #ff8a5c);
     box-shadow: 0 6px 18px rgba(255,150,90,0.35);
   }
   .ui-button:active { transform: scale(0.96); }
 
-  #resultScore { color: #3ec6c6; font-size: 44px; font-weight: 700; }
+  #resultRank { font-size: 72px; font-weight: 700; color: #ff8f4c; line-height: 1; text-shadow: 0 0 18px rgba(255,255,255,0.9); }
+  #resultScore { color: #3ec6c6; font-size: 40px; font-weight: 700; }
+  #resultDetail { color: #6b5a7a; font-size: 15px; text-align: center; line-height: 1.9; }
+  #resultDetail .p { color: #ff9f1c; font-weight: 700; }
+  #resultDetail .g { color: #2ec4b6; font-weight: 700; }
+  #resultDetail .m { color: #e63950; font-weight: 700; }
 
   .hidden { display: none !important; }
+
+  @media (prefers-reduced-motion: reduce) {
+    #cueText, #feedback, #comboWrap { transition: none; }
+  }
 </style>
 </head>
 <body>
+<!-- build: 2026-07-16 -->
 
 <div id="canvas-container"></div>
 
 <div class="ui-layer">
   <div class="top-row">
-    <div class="badge" id="badgeLabel">おてほん / きみ</div>
-    <div class="badge" id="scoreBadge">スコア 0 / 0</div>
+    <div class="badge" id="legendBadge">
+      <b class="hero">おてほん＝うさぎ</b> / <b class="you">きみ＝いぬ</b>
+      <span class="sub">ポーズと文字をまねしよう</span>
+    </div>
+    <div class="badge" id="scoreBadge">スコア 0<span class="sub" id="progressSub">0 / 12</span></div>
   </div>
+  <div class="bottom-row"></div>
 </div>
 
 <div id="cueWrap">
-  <div id="gaugeOuter"><div id="gaugeInner"></div></div>
+  <div id="gaugeOuter"><div id="gaugeInner"></div><div id="gaugeMark"></div></div>
   <div id="cueText"></div>
+  <div id="countNum"></div>
 </div>
 <div id="feedback"></div>
+<div id="comboWrap"><div id="comboNum">0</div><div id="comboLabel">COMBO</div></div>
 
 <div class="center-overlay" id="startOverlay">
   <h1>リズムダンスミラー</h1>
-  <p>おてほんキャラのポーズと文字の指示をよく見て、ビートに合わせて<br>
-  ← → スワイプ / ↓ スワイプ / タップ　のいずれかで真似しよう！</p>
+  <p>うさぎの「おてほん」が先にポーズをとります。<br>
+  カウントダウンが「GO!」になったしゅんかんに、同じうごきをまねしよう。<br>
+  <b>← → スワイプ</b> / <b>↓ スワイプ</b> / <b>タップ</b></p>
   <button class="ui-button" id="startBtn">タップしてスタート</button>
 </div>
 
 <div class="center-overlay hidden" id="resultOverlay">
-  <h1>けっか</h1>
-  <div id="resultScore">0 / 0</div>
+  <div id="resultRank">A</div>
+  <div id="resultScore">0</div>
+  <div id="resultDetail"></div>
   <button class="ui-button" id="retryBtn">もういちど</button>
 </div>
 
@@ -128,427 +181,1044 @@
 import * as THREE from 'three';
 
 /* =========================================================
-   リズムダンスミラー（簡略版 / Sonnet実装）
-   - 肩・股関節のみ（肘・膝なし）
-   - お手本・プレイヤーは同一骨格関数を使い回し
-   - BPM固定・拍子固定
-   - 判定は hit / miss の2択のみ
+   リズムダンスミラー（完成版）
+   system構成：
+     Clock      … 音楽時刻の単一情報源（AudioContext基準／フォールバック付き）
+     Music      … 先読みスケジューラ（イントロ／メイン／アウトロ）
+     Rig        … 骨格生成（肩→肘・股→膝の2階層／頭部のみ差し替え）
+     PoseSystem … ポーズ表 + バネ補間（パーツごとに遅延）
+     Judge      … 入力 → 最近傍cue → perfect/good/miss
+     CameraDir  … カメラ演出（揺れ・パンチイン・シェイク）
+     UI         … DOM表示
+     Game       … 上記を束ねる進行管理
+   依存方向は必ず Game → 各system の一方向。system間の直接参照は
+   Clock（読み取りのみ）を除き行わない。
    ========================================================= */
 
-/* ---------- iPad対策 ---------- */
-document.addEventListener('gesturestart', e => e.preventDefault());
-let lastTapAt = 0;
-function isUIElement(target) {
-  return target && target.closest && target.closest('.ui-button');
-}
+/* =========================================================
+   1. Config
+   ========================================================= */
+const CFG = {
+  BPM: 78,
+  BAR_BEATS: 4,
+  INTRO_BEATS: 8,
+  CUE_SPACING_BEATS: 4,
+  SEQUENCE_LENGTH: 12,
+  OUTRO_BEATS: 8,
+  PRECUE_BEATS: 4,          // 何拍前におてほんが動くか（予告→アクションの余裕）
+  WIN_PERFECT: 0.14,        // 秒
+  WIN_GOOD: 0.30,
+  WIN_LIMIT: 0.42,          // これより外の入力は無視（お手つき扱いにしない）
+  TIMING_HINT: 0.05         // これ以上ずれたら「はやい/おそい」を出す
+};
+const SEC_PER_BEAT = 60 / CFG.BPM;
+const MAIN_BEATS = CFG.SEQUENCE_LENGTH * CFG.CUE_SPACING_BEATS;
+const TOTAL_BEATS = CFG.INTRO_BEATS + MAIN_BEATS + CFG.OUTRO_BEATS;
 
-/* ---------- 基本パラメータ ---------- */
-const BPM = 78;
-const BEAT_MS = 60000 / BPM;
-const CUE_SPACING_BEATS = 2;      // 2拍に1アクション
-const LEAD_IN_BEATS = 4;          // 開始前の準備拍数
-const SEQUENCE_LENGTH = 12;
-const HIT_WINDOW = 380;           // 判定窓 ±380ms（ゆったり目）
 const CUE_TYPES = ['left', 'right', 'down', 'tap'];
 const CUE_LABELS = {
-  left:  '← 左スワイプ！',
-  right: '→ 右スワイプ！',
+  left:  '← ひだりスワイプ！',
+  right: '→ みぎスワイプ！',
   down:  '↓ しゃがむ！',
   tap:   '● タップ！'
 };
 
-/* ---------- シーン ---------- */
-const container = document.getElementById('canvas-container');
-const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(0xffe6d9, 6, 15);
+/* =========================================================
+   2. Clock system
+   音楽時刻(songTime, 秒)の単一情報源。beat0 = 0秒。
+   AudioContextが進まない環境（自動再生ブロック／ヘッドレス等）では
+   performance.now()へ継ぎ目なくフォールバックする。
+   ========================================================= */
+const Clock = {
+  useAudio: false,
+  audioT0: 0,
+  perfT0: 0,
+  lastAudio: -1,
+  stallFrames: 0,
+  running: false,
 
-const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 50);
-camera.position.set(0, 1.7, 4.2);
-camera.lookAt(0, 0.7, 0);
+  startFromAudio(ctx, t0) {
+    this.useAudio = true; this.audioT0 = t0;
+    this.perfT0 = performance.now();
+    this.lastAudio = -1; this.stallFrames = 0; this.running = true;
+    this._ctx = ctx;
+  },
+  startFromPerf(offsetSec) {
+    this.useAudio = false;
+    this.perfT0 = performance.now() + offsetSec * 1000;
+    this.running = true;
+  },
+  stop() { this.running = false; },
+  now() {
+    if (!this.running) return 0;
+    if (this.useAudio) return this._ctx.currentTime - this.audioT0;
+    return (performance.now() - this.perfT0) / 1000;
+  },
+  beat() { return this.now() / SEC_PER_BEAT; },
+  // 音声クロックが止まっていないか監視し、止まっていたら実時間に切替
+  watchdog() {
+    if (!this.running || !this.useAudio) return;
+    const a = this._ctx.currentTime;
+    if (a === this.lastAudio) {
+      if (++this.stallFrames > 20) {
+        const keep = a - this.audioT0;
+        this.useAudio = false;
+        this.perfT0 = performance.now() - keep * 1000;
+      }
+    } else {
+      this.stallFrames = 0;
+      this.lastAudio = a;
+    }
+  }
+};
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
-container.appendChild(renderer.domElement);
+/* =========================================================
+   3. Music system（Web Audio API・先読みスケジュール）
+   ========================================================= */
+const Music = {
+  ctx: null, master: null, noiseBuf: null,
+  timer: null, nextBeatTime: 0, scheduledBeat: 0,
+  cueBeats: new Set(),
+  SCHEDULE_AHEAD: 0.14,
+  LOOKAHEAD_MS: 25,
 
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
+  // I - V - vi - IV
+  CHORDS: [
+    { bass: 130.81, notes: [261.63, 329.63, 392.00] }, // C
+    { bass: 98.00,  notes: [196.00, 246.94, 293.66] }, // G
+    { bass: 110.00, notes: [220.00, 261.63, 329.63] }, // Am
+    { bass: 87.31,  notes: [174.61, 220.00, 261.63] }  // F
+  ],
+  // 小節ごとの和音（intro 2小節 / main 12小節 / outro 2小節 = 計16小節、I-V-vi-IVを反復）
+  SONG_CHORDS: [0, 1,  0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3,  0, 1],
+  // メインパート12小節のメロディ（b:小節内拍, f:周波数, d:長さ(拍)）
+  // ゆったりしたテンポに合わせ、1〜2拍おきの落ち着いたフレーズにしている
+  MELODY: [
+    [{b:0,f:659.25,d:1.0},{b:2,f:783.99,d:1.5}],
+    [{b:0,f:587.33,d:1.0},{b:2,f:739.99,d:1.5}],
+    [{b:0,f:523.25,d:1.0},{b:2,f:659.25,d:1.5}],
+    [{b:0,f:523.25,d:1.0},{b:2,f:698.46,d:1.5}],
+    [{b:0,f:659.25,d:1.0},{b:2,f:1046.50,d:1.5}],
+    [{b:0,f:587.33,d:1.0},{b:2,f:987.77,d:1.5}],
+    [{b:0,f:523.25,d:1.0},{b:2,f:880.00,d:1.5}],
+    [{b:0,f:523.25,d:1.0},{b:2,f:698.46,d:1.5}],
+    [{b:0,f:783.99,d:1.0},{b:2,f:1046.50,d:1.5}],
+    [{b:0,f:698.46,d:1.0},{b:2,f:987.77,d:1.5}],
+    [{b:0,f:659.25,d:0.8},{b:1.5,f:783.99,d:0.8},{b:3,f:659.25,d:1.0}],
+    [{b:0,f:587.33,d:1.5},{b:2.5,f:739.99,d:1.4}]
+  ],
 
-/* ---------- ライト（明るいステージ演出） ---------- */
-scene.add(new THREE.AmbientLight(0xfff2e0, 0.9));
-const dLight = new THREE.DirectionalLight(0xffffff, 1.0);
-dLight.position.set(2, 4, 3);
-scene.add(dLight);
-const spotCyan = new THREE.PointLight(0x8ce8ff, 2.6, 9);
-spotCyan.position.set(-2.2, 2.5, 1.5);
-scene.add(spotCyan);
-const spotMagenta = new THREE.PointLight(0xffb3e6, 2.6, 9);
-spotMagenta.position.set(2.2, 2.5, 1.5);
-scene.add(spotMagenta);
+  ensure() {
+    if (!this.ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return false;
+      this.ctx = new AC();
+      this.master = this.ctx.createGain();
+      this.master.gain.value = 0.9;
+      this.master.connect(this.ctx.destination);
+      const len = Math.floor(this.ctx.sampleRate * 0.4);
+      this.noiseBuf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+      const d = this.noiseBuf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    }
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+    return true;
+  },
 
-/* ---------- 床 ---------- */
-const floor = new THREE.Mesh(
-  new THREE.CircleGeometry(6, 32),
-  new THREE.MeshStandardMaterial({ color: 0xffe9d6, roughness: 0.8 })
-);
-floor.rotation.x = -Math.PI / 2;
-scene.add(floor);
-const grid = new THREE.GridHelper(12, 24, 0xffb8d9, 0xffd9a8);
-grid.position.y = 0.001;
-scene.add(grid);
+  tone(freq, time, dur, type, gainVal) {
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, time);
+    g.gain.exponentialRampToValueAtTime(gainVal, time + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, time + dur);
+    o.connect(g).connect(this.master);
+    o.start(time); o.stop(time + dur + 0.05);
+  },
 
-/* ---------- 棒人間キャラ生成（お手本・プレイヤー共通関数） ---------- */
-function createCharacter(color, opacity) {
+  noise(time, dur, hz, gainVal, filterType) {
+    const s = this.ctx.createBufferSource();
+    s.buffer = this.noiseBuf;
+    const f = this.ctx.createBiquadFilter();
+    f.type = filterType; f.frequency.value = hz;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(gainVal, time);
+    g.gain.exponentialRampToValueAtTime(0.0001, time + dur);
+    s.connect(f).connect(g).connect(this.master);
+    s.start(time); s.stop(time + dur + 0.02);
+  },
+
+  kick(time) {
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(140, time);
+    o.frequency.exponentialRampToValueAtTime(45, time + 0.11);
+    g.gain.setValueAtTime(0.42, time);
+    g.gain.exponentialRampToValueAtTime(0.0001, time + 0.24);
+    o.connect(g).connect(this.master);
+    o.start(time); o.stop(time + 0.26);
+  },
+  snare(time) { this.noise(time, 0.11, 1800, 0.12, 'bandpass'); },
+  hat(time, accent) { this.noise(time, 0.04, 7000, accent ? 0.09 : 0.045, 'highpass'); },
+  crash(time) { this.noise(time, 0.9, 5000, 0.13, 'highpass'); },
+
+  scheduleBeat(b, t) {
+    const bar = Math.floor(b / CFG.BAR_BEATS);
+    const bib = b % CFG.BAR_BEATS;
+    const chord = this.CHORDS[this.SONG_CHORDS[Math.min(bar, this.SONG_CHORDS.length - 1)]];
+    const introBars = CFG.INTRO_BEATS / CFG.BAR_BEATS;
+    const mainBars = MAIN_BEATS / CFG.BAR_BEATS;
+    const isIntro = b < CFG.INTRO_BEATS;
+    const isMain = !isIntro && b < CFG.INTRO_BEATS + MAIN_BEATS;
+    const isOutro = !isIntro && !isMain;
+    const outroBar = isOutro ? bar - introBars - mainBars : -1; // outro内の0始まり小節番号
+
+    if (bib === 0) {
+      const padGain = isIntro ? 0.03 : 0.05;
+      chord.notes.forEach(f => this.tone(f, t, SEC_PER_BEAT * 3.8, 'sine', padGain));
+      if (!isIntro || bar === 1) this.tone(chord.bass, t, SEC_PER_BEAT * 0.9, 'triangle', 0.16);
+      if (isMain) {
+        const mel = this.MELODY[bar - introBars];
+        if (mel) mel.forEach(n => this.tone(n.f, t + n.b * SEC_PER_BEAT, n.d * SEC_PER_BEAT, 'triangle', 0.07));
+      }
+      if (outroBar === 0) {
+        [880, 783.99, 659.25, 523.25].forEach((f, i) =>
+          this.tone(f, t + i * SEC_PER_BEAT, SEC_PER_BEAT * 0.8, 'triangle', 0.08));
+      }
+      if (outroBar === 1) { this.crash(t); this.tone(523.25, t, SEC_PER_BEAT * 3.5, 'triangle', 0.1); }
+    }
+    if (isMain && bib === 2) this.tone(chord.bass, t, SEC_PER_BEAT * 0.85, 'triangle', 0.13);
+
+    // ドラム
+    if (isIntro) {
+      if (bib % 2 === 1) this.hat(t, false);
+      if (bar === 1) this.tone(1046.5, t, 0.07, 'square', 0.06); // カウントイン
+    } else if (isMain || outroBar === 0) {
+      if (bib === 0 || bib === 2) this.kick(t);
+      if (bib === 1 || bib === 3) this.snare(t);
+      this.hat(t, bib % 2 === 0);
+      this.hat(t + SEC_PER_BEAT * 0.5, false);
+    }
+
+    // アクション拍の合図ベル
+    if (this.cueBeats.has(b)) this.tone(1318.51, t, 0.09, 'triangle', 0.055);
+  },
+
+  start(cueBeats) {
+    this.cueBeats = cueBeats;
+    this.scheduledBeat = 0;
+    this.nextBeatTime = this.ctx.currentTime + 0.25;
+    clearInterval(this.timer);
+    this.timer = setInterval(() => this.pump(), this.LOOKAHEAD_MS);
+    this.pump();
+    return this.nextBeatTime; // = songTime 0 の絶対時刻
+  },
+  pump() {
+    if (!this.ctx) return;
+    while (this.nextBeatTime < this.ctx.currentTime + this.SCHEDULE_AHEAD) {
+      if (this.scheduledBeat >= TOTAL_BEATS) { this.stop(); return; }
+      this.scheduleBeat(this.scheduledBeat, this.nextBeatTime);
+      this.scheduledBeat++;
+      this.nextBeatTime += SEC_PER_BEAT;
+    }
+  },
+  stop() { clearInterval(this.timer); this.timer = null; },
+
+  // 効果音（即時）
+  sfx(kind) {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    if (kind === 'perfect') {
+      this.tone(1318.51, t, 0.10, 'triangle', 0.22);
+      this.tone(1975.53, t + 0.05, 0.14, 'triangle', 0.16);
+    } else if (kind === 'good') {
+      this.tone(1046.50, t, 0.11, 'triangle', 0.18);
+    } else {
+      this.tone(150, t, 0.18, 'sawtooth', 0.14);
+    }
+  }
+};
+
+/* =========================================================
+   4. Rig system（骨格生成 / 頭部のみ差し替え）
+   ========================================================= */
+const LIMB = { upperArm: 0.22, foreArm: 0.20, thigh: 0.22, shin: 0.20 };
+
+function segment(len, r, mat) {
+  const g = new THREE.Group();
+  const m = new THREE.Mesh(new THREE.CapsuleGeometry(r, Math.max(len - r * 2, 0.02), 4, 8), mat);
+  m.position.y = -len / 2;
+  g.add(m);
+  return g;
+}
+
+function createHead(style, mat, accentMat) {
+  const g = new THREE.Group();
+  const ears = [];
+  const cheekMat = new THREE.MeshStandardMaterial({
+    color: 0xffb3c6, roughness: 0.6,
+    transparent: mat.transparent, opacity: mat.opacity
+  });
+
+  // 大きめの丸い頭（体に対する頭身を上げてデフォルメ）
+  const skull = new THREE.Mesh(new THREE.SphereGeometry(0.20, 20, 20), mat);
+  skull.scale.set(1, 0.92, 0.98);
+  g.add(skull);
+
+  // ほっぺ（丸み・かわいさの核）
+  [-1, 1].forEach(s => {
+    const cheek = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 12), cheekMat);
+    cheek.position.set(0.115 * s, -0.055, 0.135);
+    cheek.scale.set(1, 0.85, 0.7);
+    g.add(cheek);
+  });
+
+  // 大きな目（白目＋黒目＋ハイライトで愛嬌を出す）
+  const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 });
+  const pupilMat = new THREE.MeshStandardMaterial({ color: 0x3a2b3f, roughness: 0.25 });
+  const glintMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  [-0.075, 0.075].forEach(x => {
+    const eye = new THREE.Group();
+    eye.position.set(x, 0.03, 0.165);
+    const white = new THREE.Mesh(new THREE.SphereGeometry(0.042, 12, 12), whiteMat);
+    white.scale.set(0.85, 1, 0.6);
+    eye.add(white);
+    const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.026, 10, 10), pupilMat);
+    pupil.position.z = 0.02;
+    eye.add(pupil);
+    const glint = new THREE.Mesh(new THREE.SphereGeometry(0.009, 6, 6), glintMat);
+    glint.position.set(-0.01, 0.012, 0.038);
+    eye.add(glint);
+    g.add(eye);
+  });
+
+  if (style === 'rabbit') {
+    // まる鼻＋ちいさな口もと
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.026, 10, 10), accentMat);
+    nose.position.set(0, -0.045, 0.195);
+    g.add(nose);
+    // まるく丸みのある立ち耳（先端をつぶす）
+    [-1, 1].forEach(s => {
+      const ear = new THREE.Group();
+      const outer = new THREE.Mesh(new THREE.CapsuleGeometry(0.045, 0.16, 6, 10), mat);
+      outer.position.y = 0.13; outer.scale.set(1, 1, 0.55);
+      ear.add(outer);
+      const inner = new THREE.Mesh(new THREE.CapsuleGeometry(0.026, 0.11, 6, 10), accentMat);
+      inner.position.set(0, 0.115, 0.025); inner.scale.set(1, 1, 0.55);
+      ear.add(inner);
+      ear.position.set(0.075 * s, 0.16, -0.01);
+      ear.userData.baseZ = -0.22 * s;
+      ear.rotation.z = ear.userData.baseZ;
+      ears.push(ear);
+      g.add(ear);
+    });
+  } else { // pug-ish dog（垂れ耳・まるい鼻ぺちゃ顔）
+    const snout = new THREE.Mesh(new THREE.SphereGeometry(0.07, 14, 14), mat);
+    snout.scale.set(1, 0.75, 0.7);
+    snout.position.set(0, -0.05, 0.165);
+    g.add(snout);
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.028, 10, 10), accentMat);
+    nose.scale.set(1.1, 0.8, 0.8);
+    nose.position.set(0, -0.048, 0.225);
+    g.add(nose);
+    // まるく短い垂れ耳（先が丸い）
+    [-1, 1].forEach(s => {
+      const ear = new THREE.Group();
+      const flap = new THREE.Mesh(new THREE.SphereGeometry(0.062, 12, 12), accentMat);
+      flap.position.y = -0.055; flap.scale.set(0.8, 1, 0.55);
+      ear.add(flap);
+      ear.position.set(0.155 * s, 0.115, -0.01);
+      ear.userData.baseZ = 0.30 * s;
+      ear.rotation.z = ear.userData.baseZ;
+      ears.push(ear);
+      g.add(ear);
+    });
+  }
+  return { group: g, ears };
+}
+
+function createCharacter(opts) {
+  const mat = new THREE.MeshStandardMaterial({
+    color: opts.color, roughness: 0.5, metalness: 0.08,
+    transparent: opts.opacity < 1, opacity: opts.opacity
+  });
+  const accentMat = new THREE.MeshStandardMaterial({
+    color: opts.accent, roughness: 0.55,
+    transparent: opts.opacity < 1, opacity: opts.opacity
+  });
+
   const root = new THREE.Group();
   const torso = new THREE.Group();
   root.add(torso);
 
-  const mat = new THREE.MeshStandardMaterial({
-    color, roughness: 0.5, metalness: 0.1,
-    transparent: opacity < 1, opacity
-  });
-
-  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.42, 4, 8), mat);
-  body.position.y = 0.35;
+  // ずんぐり胴体：カプセルを縦につぶし、横に張り出させる
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.195, 0.16, 4, 10), mat);
+  body.scale.set(1.08, 1, 0.92);
+  body.position.y = 0.30;
   torso.add(body);
 
-  const headGroup = new THREE.Group();
-  headGroup.position.y = 0.78;
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 14, 14), mat);
-  headGroup.add(head);
-  torso.add(headGroup);
+  // 頭を体に対して大きく（2〜3頭身のデフォルメ比率）
+  const headRig = createHead(opts.headStyle, mat, accentMat);
+  const head = headRig.group;
+  head.position.y = 0.62;
+  torso.add(head);
 
-  function makeLimb(length, radius, pivot) {
-    const group = new THREE.Group();
-    group.position.copy(pivot);
-    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius * 0.75, length, 8), mat);
-    mesh.position.y = -length / 2;
-    group.add(mesh);
-    return group;
+  function arm(side) {
+    const sh = segment(LIMB.upperArm, 0.058, mat);
+    sh.position.set(0.185 * side, 0.36, 0.02);
+    const el = segment(LIMB.foreArm, 0.05, mat);
+    el.position.set(0, -LIMB.upperArm, 0);
+    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.058, 10, 10), accentMat);
+    hand.position.y = -LIMB.foreArm;
+    el.add(hand);
+    sh.add(el);
+    torso.add(sh);
+    return { sh, el };
   }
+  function leg(side) {
+    const hip = segment(LIMB.thigh, 0.072, mat);
+    hip.position.set(0.095 * side, 0.13, 0);
+    const kn = segment(LIMB.shin, 0.06, mat);
+    kn.position.set(0, -LIMB.thigh, 0);
+    const foot = new THREE.Mesh(new THREE.BoxGeometry(0.095, 0.05, 0.15), accentMat);
+    foot.position.set(0, -LIMB.shin, 0.03);
+    kn.add(foot);
+    hip.add(kn);
+    torso.add(hip);
+    return { hip, kn };
+  }
+  const aL = arm(-1), aR = arm(1), lL = leg(-1), lR = leg(1);
 
-  const shoulderL = makeLimb(0.38, 0.055, new THREE.Vector3(-0.2, 0.58, 0));
-  const shoulderR = makeLimb(0.38, 0.055, new THREE.Vector3(0.2, 0.58, 0));
-  const hipL = makeLimb(0.48, 0.07, new THREE.Vector3(-0.11, 0.02, 0));
-  const hipR = makeLimb(0.48, 0.07, new THREE.Vector3(0.11, 0.02, 0));
-  torso.add(shoulderL, shoulderR, hipL, hipR);
-
-  return { root, torso, shoulderL, shoulderR, hipL, hipR, current: { ...BASE_POSE }, targetPoseName: 'idle' };
+  return {
+    name: opts.name,
+    root, torso, head,
+    ears: headRig.ears,
+    shL: aL.sh, elL: aL.el, shR: aR.sh, elR: aR.el,
+    hipL: lL.hip, knL: lL.kn, hipR: lR.hip, knR: lR.kn,
+    cur: {}, vel: {},
+    poseName: 'idle', prevPoseName: 'idle', poseAt: -99,
+    groove: 1.0
+  };
 }
 
-/* ---------- ポーズ定義 ---------- */
+/* =========================================================
+   5. ポーズ表
+   符号の約束：
+     z回転(+) … 上向きベクトルが -X 方向へ傾く（＝画面左へ倒れる）
+     手足のz回転(+) … 手足の先が +X（画面右）へ振れる
+     x回転(-) … 手足の先が +Z（手前）へ振れる
+   ========================================================= */
 const BASE_POSE = {
-  rootX: 0, rootY: 0.5, torsoRotZ: 0,
-  shL_z: 0.3, shL_x: 0, shR_z: -0.3, shR_x: 0,
-  hL_z: 0.1, hL_x: 0, hR_z: -0.1, hR_x: 0
+  rootX: 0, rootY: 0.42, rootRotY: 0,
+  torsoX: 0, torsoZ: 0,
+  headX: 0, headZ: 0,
+  shL_x: 0, shL_z: -0.14, elL_x: -0.10, elL_z: 0,
+  shR_x: 0, shR_z:  0.14, elR_x: -0.10, elR_z: 0,
+  hipL_x: 0, hipL_z: -0.06, knL_x: 0.05,
+  hipR_x: 0, hipR_z:  0.06, knR_x: 0.05
 };
 const POSES = {
-  idle:  { ...BASE_POSE },
-  left:  { ...BASE_POSE, rootX: -0.3, torsoRotZ: 0.35, shL_z: 1.5, shR_z: -0.9, hL_z: 0.6, hR_z: -0.2 },
-  right: { ...BASE_POSE, rootX: 0.3,  torsoRotZ: -0.35, shL_z: 0.9, shR_z: -1.5, hL_z: 0.2, hR_z: -0.6 },
-  down:  { ...BASE_POSE, rootY: 0.28, shL_z: 0.25, shL_x: -0.35, shR_z: -0.25, shR_x: -0.35, hL_z: 0.85, hL_x: 0.45, hR_z: -0.85, hR_x: 0.45 },
-  tap:   { ...BASE_POSE, rootY: 0.72, shL_z: 2.5, shR_z: -2.5 }
+  idle: { ...BASE_POSE },
+
+  left: { ...BASE_POSE,
+    rootX: -0.30, rootRotY: 0.22, torsoZ: 0.30, headZ: 0.20,
+    shL_x: -0.12, shL_z: -2.05, elL_x: 0, elL_z: -0.25,
+    shR_x: -0.30, shR_z: 0.85, elR_x: -0.15, elR_z: -1.45,
+    hipL_x: 0, hipL_z: -0.40, knL_x: 0.22,
+    hipR_x: -0.18, hipR_z: 0.12, knR_x: 0.55
+  },
+  right: { ...BASE_POSE,
+    rootX: 0.30, rootRotY: -0.22, torsoZ: -0.30, headZ: -0.20,
+    shR_x: -0.12, shR_z: 2.05, elR_x: 0, elR_z: 0.25,
+    shL_x: -0.30, shL_z: -0.85, elL_x: -0.15, elL_z: 1.45,
+    hipR_x: 0, hipR_z: 0.40, knR_x: 0.22,
+    hipL_x: -0.18, hipL_z: -0.12, knL_x: 0.55
+  },
+  down: { ...BASE_POSE,
+    rootY: 0.28, torsoX: 0.30, headX: 0.18,
+    shL_x: -0.70, shL_z: -0.30, elL_x: -1.40, elL_z: -0.15,
+    shR_x: -0.70, shR_z: 0.30, elR_x: -1.40, elR_z: 0.15,
+    hipL_x: -1.00, hipL_z: -0.28, knL_x: 1.70,
+    hipR_x: -1.00, hipR_z: 0.28, knR_x: 1.70
+  },
+  tap: { ...BASE_POSE,
+    rootY: 0.62, torsoX: -0.10, headX: -0.14,
+    shL_x: -0.15, shL_z: -2.60, elL_x: 0, elL_z: -0.35,
+    shR_x: -0.15, shR_z: 2.60, elR_x: 0, elR_z: 0.35,
+    hipL_x: -0.50, hipL_z: -0.26, knL_x: 1.00,
+    hipR_x: -0.50, hipR_z: 0.26, knR_x: 1.00
+  },
+  // 失敗時のちいさなリアクション
+  flinch: { ...BASE_POSE,
+    rootY: 0.38, torsoX: -0.20, headX: 0.26,
+    shL_x: 0.30, shL_z: -0.30, elL_x: -0.45,
+    shR_x: 0.30, shR_z: 0.30, elR_x: -0.45,
+    hipL_x: 0.10, knL_x: 0.30, hipR_x: 0.10, knR_x: 0.30
+  }
 };
 
-function applyPose(char) {
-  const v = char.current;
-  char.root.position.x = v.rootX;
-  char.root.position.y = v.rootY;
-  char.torso.rotation.z = v.torsoRotZ;
-  char.shoulderL.rotation.set(v.shL_x, 0, v.shL_z);
-  char.shoulderR.rotation.set(v.shR_x, 0, v.shR_z);
-  char.hipL.rotation.set(v.hL_x, 0, v.hL_z);
-  char.hipR.rotation.set(v.hR_x, 0, v.hR_z);
-}
+/* =========================================================
+   6. PoseSystem（バネ補間 + パーツごとの遅延）
+   ========================================================= */
+const JOINT_KEYS = Object.keys(BASE_POSE);
+const JOINT_GROUP = {};
+JOINT_KEYS.forEach(k => {
+  if (k.startsWith('sh') || k.startsWith('el')) JOINT_GROUP[k] = 'arm';
+  else if (k.startsWith('hip') || k.startsWith('kn')) JOINT_GROUP[k] = 'leg';
+  else if (k.startsWith('head')) JOINT_GROUP[k] = 'head';
+  else JOINT_GROUP[k] = 'core';
+});
+// k:ばね定数 c:減衰（cが小さいほど僅かに行き過ぎて弾む）
+const SPRING = {
+  core: { k: 280, c: 28 },
+  leg:  { k: 250, c: 26 },
+  arm:  { k: 210, c: 20 },
+  head: { k: 170, c: 17 }
+};
+// 体幹→脚→腕→頭 の順に遅れて動き、うごきに流れが出る
+const DELAY = { core: 0, leg: 0.035, arm: 0.065, head: 0.10 };
+const SUBSTEP = 1 / 180;
 
-function updatePose(char, dt) {
-  const target = POSES[char.targetPoseName];
-  const alpha = 1 - Math.exp(-dt * 9);
-  for (const k in BASE_POSE) {
-    char.current[k] += (target[k] - char.current[k]) * alpha;
+const PoseSystem = {
+  reset(char) {
+    JOINT_KEYS.forEach(k => { char.cur[k] = BASE_POSE[k]; char.vel[k] = 0; });
+    char.poseName = 'idle'; char.prevPoseName = 'idle'; char.poseAt = -99;
+    this.apply(char);
+  },
+  setPose(char, name, atTime) {
+    if (char.poseName === name) return;
+    char.prevPoseName = char.poseName;
+    char.poseName = name;
+    char.poseAt = atTime;
+  },
+  update(char, dt, now, beat, playing) {
+    const from = POSES[char.prevPoseName], to = POSES[char.poseName];
+    const target = {};
+    for (const k of JOINT_KEYS) {
+      const g = JOINT_GROUP[k];
+      target[k] = (now >= char.poseAt + DELAY[g]) ? to[k] : from[k];
+    }
+    let remain = dt;
+    let guard = 16;
+    while (remain > 1e-6 && guard-- > 0) {
+      const h = Math.min(SUBSTEP, remain);
+      remain -= h;
+      for (const k of JOINT_KEYS) {
+        const s = SPRING[JOINT_GROUP[k]];
+        const a = (target[k] - char.cur[k]) * s.k - char.vel[k] * s.c;
+        char.vel[k] += a * h;
+        char.cur[k] += char.vel[k] * h;
+      }
+    }
+    this.apply(char);
+    if (playing) this.groove(char, beat);
+    this.wiggleEars(char, beat, playing);
+  },
+  apply(char) {
+    const v = char.cur;
+    char.root.position.set(v.rootX, v.rootY, 0);
+    char.root.rotation.y = v.rootRotY;
+    char.torso.rotation.set(v.torsoX, 0, v.torsoZ);
+    char.head.rotation.set(v.headX, 0, v.headZ);
+    char.shL.rotation.set(v.shL_x, 0, v.shL_z);
+    char.elL.rotation.set(v.elL_x, 0, v.elL_z);
+    char.shR.rotation.set(v.shR_x, 0, v.shR_z);
+    char.elR.rotation.set(v.elR_x, 0, v.elR_z);
+    char.hipL.rotation.set(v.hipL_x, 0, v.hipL_z);
+    char.knL.rotation.set(v.knL_x, 0, 0);
+    char.hipR.rotation.set(v.hipR_x, 0, v.hipR_z);
+    char.knR.rotation.set(v.knR_x, 0, 0);
+  },
+  // 拍に合わせた縦のり・横ゆれ（ポーズの上に足し込む）
+  groove(char, beat) {
+    const bob = (Math.abs(Math.sin(Math.PI * beat)) - 0.5) * 0.045 * char.groove;
+    const sway = Math.sin(Math.PI * beat * 0.5) * 0.05 * char.groove;
+    char.root.position.y += bob;
+    char.torso.rotation.z += sway;
+  },
+  wiggleEars(char, beat, playing) {
+    const amp = playing ? 0.12 : 0.05;
+    const w = Math.sin(Math.PI * beat * 2) * amp;
+    char.ears.forEach((e, i) => { e.rotation.x = w * (i === 0 ? 1 : -1) * 0.6; });
   }
-  applyPose(char);
-}
+};
 
-/* ---------- キャラ配置 ---------- */
-const hero = createCharacter(0x6fd3ff, 0.55);
+/* =========================================================
+   7. Stage（シーン・ライト・床）
+   ========================================================= */
+const container = document.getElementById('canvas-container');
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0xffe6d9, 7, 16);
+
+const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 60);
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+container.appendChild(renderer.domElement);
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+scene.add(new THREE.AmbientLight(0xfff2e0, 0.95));
+const dLight = new THREE.DirectionalLight(0xffffff, 1.0);
+dLight.position.set(2, 4, 3);
+scene.add(dLight);
+const spotCyan = new THREE.PointLight(0x8ce8ff, 2.6, 10);
+spotCyan.position.set(-2.4, 2.6, 1.6);
+scene.add(spotCyan);
+const spotMagenta = new THREE.PointLight(0xffb3e6, 2.6, 10);
+spotMagenta.position.set(2.4, 2.6, 1.6);
+scene.add(spotMagenta);
+
+const floor = new THREE.Mesh(
+  new THREE.CircleGeometry(6.5, 40),
+  new THREE.MeshStandardMaterial({ color: 0xffe9d6, roughness: 0.85 })
+);
+floor.rotation.x = -Math.PI / 2;
+scene.add(floor);
+const grid = new THREE.GridHelper(13, 26, 0xffb8d9, 0xffd9a8);
+grid.position.y = 0.002;
+scene.add(grid);
+
+// 拍で光るリング（ビートの視覚化）
+const beatRing = new THREE.Mesh(
+  new THREE.RingGeometry(1.05, 1.22, 48),
+  new THREE.MeshBasicMaterial({ color: 0xffc36b, transparent: true, opacity: 0.35, side: THREE.DoubleSide })
+);
+beatRing.rotation.x = -Math.PI / 2;
+beatRing.position.set(0.9, 0.004, 0.35);
+scene.add(beatRing);
+
+const hero = createCharacter({ name: 'hero', color: 0xfff2f6, accent: 0xffaecb, opacity: 0.82, headStyle: 'rabbit' });
 const heroWrap = new THREE.Group();
-heroWrap.position.set(-0.85, 0, -0.55);
+heroWrap.position.set(-0.9, 0, -0.6);
+heroWrap.rotation.y = 0.14;
 heroWrap.add(hero.root);
 scene.add(heroWrap);
 
-const player = createCharacter(0xff5da2, 1);
+const player = createCharacter({ name: 'player', color: 0xffdba8, accent: 0xb5651d, opacity: 1, headStyle: 'dog' });
 const playerWrap = new THREE.Group();
-playerWrap.position.set(0.85, 0, 0.35);
+playerWrap.position.set(0.9, 0, 0.35);
+playerWrap.rotation.y = -0.10;
 playerWrap.add(player.root);
 scene.add(playerWrap);
 
-/* ---------- 音声（Web Audio API） ---------- */
-let audioCtx = null;
-function ensureAudio() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-}
-function beep(freq, duration, type, gainVal) {
-  if (!audioCtx) return;
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = type;
-  osc.frequency.value = freq;
-  const t = audioCtx.currentTime;
-  gain.gain.setValueAtTime(gainVal, t);
-  gain.gain.exponentialRampToValueAtTime(0.0001, t + duration);
-  osc.connect(gain).connect(audioCtx.destination);
-  osc.start(t);
-  osc.stop(t + duration);
-}
-const sndBeat = () => beep(760, 0.05, 'sine', 0.06);
-const sndHit  = () => beep(1400, 0.12, 'triangle', 0.2);
-const sndMiss = () => beep(150, 0.18, 'sawtooth', 0.15);
+PoseSystem.reset(hero);
+PoseSystem.reset(player);
 
-/* ---------- ゲーム状態 ---------- */
-let gameState = 'ready'; // ready | playing | result
-let startTime = 0;
-let sequence = [];
-let score = 0;
-let lastBeatTick = -1;
-let cueTextTimeoutId = null;
-
-function generateSequence() {
-  const seq = [];
-  let prev = null;
-  for (let i = 0; i < SEQUENCE_LENGTH; i++) {
-    let type;
-    do { type = CUE_TYPES[Math.floor(Math.random() * CUE_TYPES.length)]; } while (type === prev);
-    prev = type;
-    seq.push({
-      beatIndex: LEAD_IN_BEATS + i * CUE_SPACING_BEATS,
-      type,
-      preCueShown: false,
-      judged: false,
-      result: null
-    });
+/* =========================================================
+   8. CameraDirector
+   ========================================================= */
+const CameraDir = {
+  base: new THREE.Vector3(0, 1.42, 3.85),
+  look: new THREE.Vector3(0.1, 0.55, 0),
+  punch: 0, shake: 0,
+  hitPunch() { this.punch = 1; },
+  hitShake() { this.shake = 1; },
+  update(dt, t) {
+    this.punch += (0 - this.punch) * (1 - Math.exp(-dt * 6));
+    this.shake += (0 - this.shake) * (1 - Math.exp(-dt * 9));
+    const sx = Math.sin(t * 0.35) * 0.28;
+    const sy = Math.sin(t * 0.52) * 0.06;
+    const rx = (Math.random() - 0.5) * this.shake * 0.09;
+    const ry = (Math.random() - 0.5) * this.shake * 0.09;
+    camera.position.set(
+      this.base.x + sx + rx,
+      this.base.y + sy + ry,
+      this.base.z - this.punch * 0.42
+    );
+    camera.lookAt(this.look);
   }
-  return seq;
-}
+};
 
-const scoreBadge = document.getElementById('scoreBadge');
-const cueText = document.getElementById('cueText');
-const gaugeInner = document.getElementById('gaugeInner');
-const feedback = document.getElementById('feedback');
-const startOverlay = document.getElementById('startOverlay');
-const resultOverlay = document.getElementById('resultOverlay');
-const resultScore = document.getElementById('resultScore');
+/* =========================================================
+   9. UI system
+   ========================================================= */
+const UI = {
+  scoreBadge: document.getElementById('scoreBadge'),
+  progressSub: document.getElementById('progressSub'),
+  cueText: document.getElementById('cueText'),
+  gaugeOuter: document.getElementById('gaugeOuter'),
+  gaugeInner: document.getElementById('gaugeInner'),
+  countNum: document.getElementById('countNum'),
+  feedback: document.getElementById('feedback'),
+  comboWrap: document.getElementById('comboWrap'),
+  comboNum: document.getElementById('comboNum'),
+  startOverlay: document.getElementById('startOverlay'),
+  resultOverlay: document.getElementById('resultOverlay'),
+  resultRank: document.getElementById('resultRank'),
+  resultScore: document.getElementById('resultScore'),
+  resultDetail: document.getElementById('resultDetail'),
+  _fbT: null, _cueT: null,
 
-function updateScoreUI() {
-  scoreBadge.textContent = `スコア ${score} / ${SEQUENCE_LENGTH}`;
-}
-
-function showFeedback(text, color) {
-  feedback.textContent = text;
-  feedback.style.color = color;
-  feedback.classList.add('show');
-  clearTimeout(feedback._t);
-  feedback._t = setTimeout(() => feedback.classList.remove('show'), 420);
-}
-
-function showCue(type) {
-  cueText.textContent = CUE_LABELS[type];
-  cueText.classList.add('show');
-  clearTimeout(cueTextTimeoutId);
-  cueTextTimeoutId = setTimeout(() => cueText.classList.remove('show'), CUE_SPACING_BEATS * BEAT_MS - 80);
-}
-
-function startGame() {
-  ensureAudio();
-  score = 0;
-  sequence = generateSequence();
-  gameState = 'playing';
-  startTime = performance.now();
-  lastBeatTick = -1;
-  updateScoreUI();
-  startOverlay.classList.add('hidden');
-  resultOverlay.classList.add('hidden');
-  hero.targetPoseName = 'idle';
-  player.targetPoseName = 'idle';
-}
-
-function endGame() {
-  gameState = 'result';
-  resultScore.textContent = `${score} / ${SEQUENCE_LENGTH}`;
-  resultOverlay.classList.remove('hidden');
-  cueText.classList.remove('show');
-  gaugeInner.style.width = '0%';
-}
-
-document.getElementById('startBtn').addEventListener('click', startGame);
-document.getElementById('retryBtn').addEventListener('click', startGame);
-
-/* ---------- 判定処理 ---------- */
-function handleGestureType(type, timestamp) {
-  if (gameState !== 'playing') return;
-  let best = null, bestDiff = Infinity;
-  for (const cue of sequence) {
-    if (cue.judged) continue;
-    const beatTime = startTime + cue.beatIndex * BEAT_MS;
-    const diff = Math.abs(timestamp - beatTime);
-    if (diff < bestDiff) { bestDiff = diff; best = cue; }
+  score(score, done, total) {
+    this.scoreBadge.firstChild.textContent = `スコア ${score}`;
+    this.progressSub.textContent = `${done} / ${total}`;
+  },
+  cue(type) {
+    this.cueText.textContent = CUE_LABELS[type];
+    this.cueText.classList.add('show');
+    clearTimeout(this._cueT);
+    this._cueT = setTimeout(() => this.cueText.classList.remove('show'),
+      CFG.CUE_SPACING_BEATS * SEC_PER_BEAT * 1000 - 60);
+  },
+  hideCue() { this.cueText.classList.remove('show'); },
+  // p: 0(予告開始)→1(判定拍そのもの)。ゲージは「あと少し」を示すため
+  // 満タン→空へ縮む向きにする方が直感的なので (1-p) を幅にする。
+  gauge(p, armed) {
+    const remain = Math.max(0, Math.min(1, 1 - p));
+    this.gaugeInner.style.width = `${remain * 100}%`;
+    this.gaugeOuter.classList.toggle('armed', !!armed);
+  },
+  count(text) {
+    if (!text) { this.countNum.classList.remove('show'); return; }
+    this.countNum.textContent = text;
+    this.countNum.classList.add('show');
+  },
+  judge(label, color, timing) {
+    this.feedback.innerHTML = `${label}${timing ? `<span class="timing">${timing}</span>` : ''}`;
+    this.feedback.style.color = color;
+    this.feedback.classList.add('show');
+    clearTimeout(this._fbT);
+    this._fbT = setTimeout(() => this.feedback.classList.remove('show'), 430);
+  },
+  combo(n) {
+    this.comboNum.textContent = n;
+    this.comboWrap.classList.toggle('show', n >= 2);
+  },
+  result(r) {
+    this.resultRank.textContent = r.rank;
+    this.resultScore.textContent = `${r.score} てん`;
+    this.resultDetail.innerHTML =
+      `<span class="p">PERFECT ${r.perfect}</span> ／ <span class="g">GOOD ${r.good}</span> ／ <span class="m">MISS ${r.miss}</span><br>` +
+      `さいだいコンボ ${r.maxCombo}<br>${r.comment}`;
+    this.resultOverlay.classList.remove('hidden');
   }
-  if (!best || bestDiff > HIT_WINDOW) return;
+};
 
-  best.judged = true;
-  if (type === best.type) {
-    best.result = 'hit';
-    score++;
-    player.targetPoseName = best.type;
-    sndHit();
-    showFeedback('Hit!', '#12b8a3');
-  } else {
-    best.result = 'miss';
-    sndMiss();
-    showFeedback('Miss', '#e63950');
+/* =========================================================
+   10. Game（進行管理）
+   ========================================================= */
+const Game = {
+  state: 'ready',           // ready | playing | result
+  seq: [], score: 0, combo: 0, maxCombo: 0,
+  counts: { perfect: 0, good: 0, miss: 0 },
+  maxScore: 0,
+  frames: 0,
+
+  buildSequence() {
+    const seq = [];
+    let prev = null;
+    for (let i = 0; i < CFG.SEQUENCE_LENGTH; i++) {
+      let type;
+      do { type = CUE_TYPES[Math.floor(Math.random() * CUE_TYPES.length)]; } while (type === prev);
+      prev = type;
+      seq.push({
+        index: i,
+        beatIndex: CFG.INTRO_BEATS + i * CFG.CUE_SPACING_BEATS,
+        time: (CFG.INTRO_BEATS + i * CFG.CUE_SPACING_BEATS) * SEC_PER_BEAT,
+        type, precued: false, heroReset: false,
+        judged: false, result: null, diff: null
+      });
+    }
+    return seq;
+  },
+  computeMaxScore() {
+    let m = 0;
+    for (let i = 1; i <= CFG.SEQUENCE_LENGTH; i++) m += 100 + Math.min(i, 10) * 5;
+    return m;
+  },
+
+  start() {
+    this.seq = this.buildSequence();
+    this.score = 0; this.combo = 0; this.maxCombo = 0;
+    this.counts = { perfect: 0, good: 0, miss: 0 };
+    this.maxScore = this.computeMaxScore();
+    this.frames = 0;
+
+    PoseSystem.reset(hero);
+    PoseSystem.reset(player);
+
+    const cueBeats = new Set(this.seq.map(c => c.beatIndex));
+    if (Music.ensure() && Music.ctx.state === 'running') {
+      const t0 = Music.start(cueBeats);
+      Clock.startFromAudio(Music.ctx, t0);
+    } else {
+      // 音が出せない環境でもゲームは成立させる
+      Clock.startFromPerf(0.25);
+    }
+
+    this.state = 'playing';
+    UI.startOverlay.classList.add('hidden');
+    UI.resultOverlay.classList.add('hidden');
+    UI.score(0, 0, CFG.SEQUENCE_LENGTH);
+    UI.combo(0);
+    UI.gauge(0, false);
+  },
+
+  end() {
+    this.state = 'result';
+    Music.stop();
+    Clock.stop();
+    UI.hideCue();
+    UI.gauge(0, false);
+    UI.combo(0);
+    UI.result(this.resultData());
+  },
+
+  resultData() {
+    const ratio = this.maxScore ? this.score / this.maxScore : 0;
+    let rank = 'D', comment = 'もういちどチャレンジ！';
+    if (ratio >= 0.95) { rank = 'S'; comment = 'かんぺき！ダンスの天才！'; }
+    else if (ratio >= 0.85) { rank = 'A'; comment = 'すごい！リズムばっちり！'; }
+    else if (ratio >= 0.70) { rank = 'B'; comment = 'いいかんじ！あと少し！'; }
+    else if (ratio >= 0.50) { rank = 'C'; comment = 'リズムをよく聞いてみよう。'; }
+    return { rank, comment, score: this.score, maxCombo: this.maxCombo, ...this.counts };
+  },
+
+  // 入力 → 判定（Judge system）
+  input(type, at) {
+    if (this.state !== 'playing') return null;
+    // 新しいポーズが「予告された瞬間」から入力を受け付ける。
+    // 判定拍より早い入力は precued 済みかどうかだけで許可し（早すぎるフライングは
+    // 弾かない）、判定拍を過ぎた後は従来どおり WIN_LIMIT までの猶予とする。
+    let best = null, bestAbs = Infinity, bestDiff = 0;
+    for (const c of this.seq) {
+      if (c.judged || !c.precued) continue;
+      const d = at - c.time;
+      if (d > CFG.WIN_LIMIT) continue;              // 判定拍を過ぎすぎた入力は対象外
+      if (Math.abs(d) < bestAbs) { bestAbs = Math.abs(d); bestDiff = d; best = c; }
+    }
+    if (!best) return null;
+
+    best.judged = true;
+    best.diff = bestDiff;
+
+    if (type !== best.type) return this.resolve(best, 'miss', 'ポーズがちがう');
+    if (bestAbs <= CFG.WIN_PERFECT) return this.resolve(best, 'perfect', null);
+    // 判定拍のgood窓に収まっていれば従来通りgood。
+    // それより早い（予告直後〜good窓前）入力も、早すぎてmissにはせずgood扱いにする。
+    if (bestAbs <= CFG.WIN_GOOD || bestDiff < 0) return this.resolve(best, 'good', bestDiff < -CFG.WIN_GOOD ? null : this.timingHint(bestDiff));
+    return this.resolve(best, 'miss', this.timingHint(bestDiff));
+  },
+  timingHint(diff) {
+    if (Math.abs(diff) < CFG.TIMING_HINT) return null;
+    return diff < 0 ? 'ちょっとはやい' : 'ちょっとおそい';
+  },
+  resolve(cue, result, hint) {
+    cue.result = result;
+    const now = Clock.now();
+    if (result === 'miss') {
+      this.combo = 0;
+      this.counts.miss++;
+      PoseSystem.setPose(player, 'flinch', now);
+      player.groove = 0.5;
+      Music.sfx('miss');
+      CameraDir.hitShake();
+      UI.judge('MISS', '#e63950', hint);
+    } else {
+      this.combo++;
+      this.maxCombo = Math.max(this.maxCombo, this.combo);
+      const bonus = Math.min(this.combo, 10) * 5;
+      this.score += (result === 'perfect' ? 100 : 60) + bonus;
+      this.counts[result]++;
+      PoseSystem.setPose(player, cue.type, now);
+      player.groove = 1.2;
+      Music.sfx(result);
+      if (result === 'perfect') CameraDir.hitPunch();
+      UI.judge(result === 'perfect' ? 'PERFECT!' : 'GOOD!', result === 'perfect' ? '#ff9f1c' : '#2ec4b6', hint);
+    }
+    UI.score(this.score, this.counts.perfect + this.counts.good + this.counts.miss, CFG.SEQUENCE_LENGTH);
+    UI.combo(this.combo);
+    return result;
+  },
+
+  // 毎フレームの進行更新
+  update(t) {
+    if (this.state !== 'playing') return;
+    const precueLead = CFG.PRECUE_BEATS * SEC_PER_BEAT;
+    let active = null;
+
+    for (const c of this.seq) {
+      if (!c.precued && t >= c.time - precueLead) {
+        c.precued = true;
+        PoseSystem.setPose(hero, c.type, t);
+        UI.cue(c.type);
+      }
+      // おてほんは判定拍の少しあとに構え直す
+      if (c.precued && !c.heroReset && t >= c.time + SEC_PER_BEAT * 0.9) {
+        c.heroReset = true;
+        if (hero.poseName === c.type) PoseSystem.setPose(hero, 'idle', t);
+      }
+      if (!c.judged && t > c.time + CFG.WIN_LIMIT) {
+        c.judged = true; c.diff = null;
+        this.resolve(c, 'miss', 'にゅうりょくなし');
+      }
+      if (c.precued && !c.judged) active = active || c;
+    }
+
+    // ゲージ：予告からアクション拍まで（残り時間として縮んでいく）
+    if (active) {
+      const p = (t - (active.time - precueLead)) / precueLead;
+      const remainSec = active.time - t;
+      UI.gauge(p, remainSec <= CFG.WIN_GOOD);
+      // 判定拍の直前は大きな数字でカウントダウン（3・2・1・GO!）
+      if (remainSec <= CFG.WIN_GOOD) UI.count('GO!');
+      else if (remainSec <= SEC_PER_BEAT) UI.count(String(Math.ceil((remainSec - CFG.WIN_GOOD) / ((SEC_PER_BEAT - CFG.WIN_GOOD) / 3))));
+      else UI.count(null);
+    } else {
+      UI.gauge(0, false);
+      UI.count(null);
+    }
+
+    // プレイヤーを構えに戻す
+    if (player.poseName !== 'idle' && t > player.poseAt + SEC_PER_BEAT * 1.3) {
+      PoseSystem.setPose(player, 'idle', t);
+      player.groove = 1.0;
+    }
+
+    if (t > TOTAL_BEATS * SEC_PER_BEAT) this.end();
   }
-  updateScoreUI();
+};
+
+/* =========================================================
+   11. Input system（iPad対応）
+   ========================================================= */
+document.addEventListener('gesturestart', e => e.preventDefault());
+document.addEventListener('gesturechange', e => e.preventDefault());
+document.addEventListener('gestureend', e => e.preventDefault());
+document.addEventListener('dblclick', e => e.preventDefault());
+
+let lastTapAt = 0;
+const isUI = t => !!(t && t.closest && t.closest('.ui-button'));
+
+function classify(dx, dy, dtMs) {
+  const ax = Math.abs(dx), ay = Math.abs(dy);
+  if (ax < 16 && ay < 16 && dtMs < 260) return 'tap';
+  if (ax > 40 && ax > ay * 1.4) return dx > 0 ? 'right' : 'left';
+  if (ay > 40 && ay > ax * 1.4 && dy > 0) return 'down';
+  return null;
+}
+function submit(type) {
+  if (!type) return;
+  Game.input(type, Clock.now());
 }
 
-function processGesture(dx, dy, dt) {
-  let type = null;
-  if (Math.abs(dx) < 15 && Math.abs(dy) < 15 && dt < 250) {
-    type = 'tap';
-  } else if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-    type = dx > 0 ? 'right' : 'left';
-  } else if (Math.abs(dy) > 40 && Math.abs(dy) > Math.abs(dx) * 1.5 && dy > 0) {
-    type = 'down';
-  }
-  if (type) handleGestureType(type, performance.now());
-}
-
-/* ---------- 入力（タッチ） ---------- */
-const gesture = { active: false, startX: 0, startY: 0, startTime: 0 };
-
+const g = { active: false, x: 0, y: 0, t: 0 };
 document.addEventListener('touchstart', e => {
-  if (isUIElement(e.target)) return;
+  if (isUI(e.target)) return;
   e.preventDefault();
-  const t = e.touches[0];
-  gesture.active = true;
-  gesture.startX = t.clientX;
-  gesture.startY = t.clientY;
-  gesture.startTime = performance.now();
+  const p = e.touches[0];
+  g.active = true; g.x = p.clientX; g.y = p.clientY; g.t = performance.now();
 }, { passive: false });
 
 document.addEventListener('touchmove', e => {
-  if (isUIElement(e.target)) return;
+  if (isUI(e.target)) return;
   e.preventDefault();
 }, { passive: false });
 
 document.addEventListener('touchend', e => {
-  if (isUIElement(e.target)) return;
+  if (isUI(e.target)) return;
   const now = performance.now();
-  if (now - lastTapAt < 300) e.preventDefault(); // ダブルタップズーム防止
+  if (now - lastTapAt < 300) e.preventDefault(); // 300ms以内の連続タップでのズームを阻止
   lastTapAt = now;
-  if (!gesture.active) return;
-  gesture.active = false;
-  const t = e.changedTouches[0];
-  const dx = t.clientX - gesture.startX;
-  const dy = t.clientY - gesture.startY;
-  const dt = now - gesture.startTime;
-  processGesture(dx, dy, dt);
+  if (!g.active) return;
+  g.active = false;
+  const p = e.changedTouches[0];
+  submit(classify(p.clientX - g.x, p.clientY - g.y, now - g.t));
 }, { passive: false });
 
-/* ---------- 入力（デスクトップ確認用・マウス） ---------- */
-let mouseDown = false, mStartX = 0, mStartY = 0, mStartTime = 0;
+document.addEventListener('touchcancel', () => { g.active = false; }, { passive: false });
+
+// デスクトップ確認用
+let md = false, mx = 0, my = 0, mt = 0;
 document.addEventListener('mousedown', e => {
-  if (isUIElement(e.target)) return;
-  mouseDown = true; mStartX = e.clientX; mStartY = e.clientY; mStartTime = performance.now();
+  if (isUI(e.target)) return;
+  md = true; mx = e.clientX; my = e.clientY; mt = performance.now();
 });
 document.addEventListener('mouseup', e => {
-  if (isUIElement(e.target)) return;
-  if (!mouseDown) return;
-  mouseDown = false;
-  processGesture(e.clientX - mStartX, e.clientY - mStartY, performance.now() - mStartTime);
+  if (isUI(e.target) || !md) return;
+  md = false;
+  submit(classify(e.clientX - mx, e.clientY - my, performance.now() - mt));
+});
+addEventListener('keydown', e => {
+  const map = { ArrowLeft: 'left', ArrowRight: 'right', ArrowDown: 'down', ' ': 'tap' };
+  if (map[e.key]) { e.preventDefault(); submit(map[e.key]); }
 });
 
-/* ---------- ゲームループ ---------- */
-let lastFrameTime = performance.now();
-let frameCount = 0;
+document.getElementById('startBtn').addEventListener('click', () => { Music.ensure(); Game.start(); });
+document.getElementById('retryBtn').addEventListener('click', () => { Music.ensure(); Game.start(); });
 
+/* =========================================================
+   12. Main loop
+   ========================================================= */
+let lastFrame = performance.now();
 function animate(now) {
   requestAnimationFrame(animate);
-  const dt = Math.min((now - lastFrameTime) / 1000, 1 / 30); // dtScale方式（120Hz対応クランプ）
-  lastFrameTime = now;
-  frameCount++;
+  const dt = Math.min((now - lastFrame) / 1000, 1 / 30); // dtScale方式（120Hz ProMotion対応クランプ）
+  lastFrame = now;
+  Game.frames++;
 
-  if (gameState === 'playing') {
-    const elapsed = now - startTime;
+  Clock.watchdog();
+  const t = Clock.now();
+  const beat = Clock.beat();
+  const playing = Game.state === 'playing';
 
-    // ビート音
-    const beatIndexNow = Math.floor(elapsed / BEAT_MS);
-    if (beatIndexNow > lastBeatTick) {
-      lastBeatTick = beatIndexNow;
-      if (beatIndexNow >= 0) sndBeat();
-    }
+  Game.update(t);
 
-    let activeCue = null;
-    for (const cue of sequence) {
-      const preCueTime = (cue.beatIndex - CUE_SPACING_BEATS) * BEAT_MS;
-      const beatTime = cue.beatIndex * BEAT_MS;
+  PoseSystem.update(hero, dt, t, beat, playing);
+  PoseSystem.update(player, dt, t, beat, playing);
 
-      if (!cue.preCueShown && elapsed >= preCueTime) {
-        cue.preCueShown = true;
-        hero.targetPoseName = cue.type;
-        showCue(cue.type);
-      }
-      if (cue.preCueShown && !cue.judged) {
-        activeCue = cue;
-      }
-      if (!cue.judged && elapsed > beatTime + HIT_WINDOW) {
-        cue.judged = true;
-        cue.result = 'miss';
-        sndMiss();
-        showFeedback('Miss', '#e63950');
-        updateScoreUI();
-      }
-    }
+  const pulse = playing ? Math.pow(1 - (beat - Math.floor(beat)), 3) : 0.2;
+  const onActionBeat = playing && Game.seq.some(c => !c.judged && Math.abs(t - c.time) < CFG.WIN_GOOD);
+  beatRing.material.color.setHex(onActionBeat ? 0x2ec4b6 : 0xffc36b);
+  beatRing.material.opacity = 0.14 + pulse * (onActionBeat ? 0.65 : 0.4);
+  beatRing.scale.setScalar(1 + pulse * (onActionBeat ? 0.14 : 0.06));
+  spotCyan.intensity = 2.6 + Math.sin(now * 0.002) * 0.6;
+  spotMagenta.intensity = 2.6 + Math.cos(now * 0.002) * 0.6;
 
-    if (activeCue) {
-      const preCueTime = (activeCue.beatIndex - CUE_SPACING_BEATS) * BEAT_MS;
-      const progress = Math.min(1, Math.max(0, (elapsed - preCueTime) / (CUE_SPACING_BEATS * BEAT_MS)));
-      gaugeInner.style.width = `${progress * 100}%`;
-    }
-
-    const lastCue = sequence[sequence.length - 1];
-    if (lastCue && lastCue.judged && elapsed > lastCue.beatIndex * BEAT_MS + HIT_WINDOW + 400) {
-      endGame();
-    }
-  }
-
-  updatePose(hero, dt);
-  updatePose(player, dt);
-
-  spotCyan.intensity = 3 + Math.sin(now * 0.002) * 0.6;
-  spotMagenta.intensity = 3 + Math.cos(now * 0.002) * 0.6;
-
+  CameraDir.update(dt, now * 0.001);
   renderer.render(scene, camera);
 }
 requestAnimationFrame(animate);
 
-/* ---------- テスト用フック ---------- */
-window.__game = {
-  state: () => gameState,
-  frames: () => frameCount,
-  elapsed: () => (gameState === 'playing' ? performance.now() - startTime : 0),
-  score: () => score,
-  sequence: () => sequence,
+/* =========================================================
+   13. テスト用フック（Playwright検証用）
+   注：hero/player の姿勢は PoseSystem の内部データ（cur / poseName）で
+       駆動しており、Object3D の .position / .rotation を外部から書き換えても
+       次フレームで apply() により上書きされる。姿勢を操作する場合は
+       api.setPose() を使うこと。判定時刻は Clock.now()（音楽時刻・秒）基準。
+   ========================================================= */
+window.__game = window.__G = {
+  state: () => Game.state,
+  frames: () => Game.frames,
+  elapsed: () => Clock.now(),          // 音楽時刻（秒）
+  beat: () => Clock.beat(),
+  clockSource: () => (Clock.useAudio ? 'audio' : 'performance'),
+  score: () => Game.score,
+  combo: () => Game.combo,
+  maxCombo: () => Game.maxCombo,
+  counts: () => ({ ...Game.counts }),
+  sequence: () => Game.seq,
+  nextCue: () => Game.seq.find(c => !c.judged) || null,
+  result: () => (Game.state === 'result' ? Game.resultData() : null),
   entities: { hero, player },
+  poses: POSES,
   camera,
-  // 注：hero/playerの位置は内部ポーズテーブル(current/targetPoseName)で駆動しており、
-  // .position を外部から直接書き換えても次フレームでポーズ補間により上書きされる。
+  config: CFG,
   api: {
-    start: startGame,
-    triggerGesture: (type) => handleGestureType(type, performance.now())
+    start: () => Game.start(),
+    end: () => Game.end(),
+    // typeのみ指定 → 現在時刻で判定。atSecを渡すと任意の音楽時刻で判定
+    triggerGesture: (type, atSec) => Game.input(type, atSec === undefined ? Clock.now() : atSec),
+    // 次のcueをちょうどのタイミングで成功させる（デモ・検証用）
+    autoHitNext: () => {
+      const c = Game.seq.find(x => !x.judged);
+      return c ? Game.input(c.type, c.time) : null;
+    },
+    setPose: (who, name) => PoseSystem.setPose(who === 'hero' ? hero : player, name, Clock.now()),
+    muted: (on) => { if (Music.master) Music.master.gain.value = on ? 0 : 0.9; }
   }
 };
 </script>
